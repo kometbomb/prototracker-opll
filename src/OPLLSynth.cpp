@@ -1,14 +1,14 @@
-#include "Synth.h"
-#include "Oscillator.h"
+#include "OPLLSynth.h"
+#include "OPLLTrack.h"
 #include "SequenceRow.h"
 #include "Sample.h"
-#include "WaveStore.h"
 #include "SDL.h"
+#include "emu32413/emu32413.h"
 
-Synth::Synth()
+OPLLSynth::OPLLSynth()
 	: ISynth()
 {
-	mWaveStore = new WaveStore();
+	mOPLL = OPLL_new(4000000, 44100);
 	
 	/* 
 	
@@ -18,16 +18,15 @@ Synth::Synth()
 	
 	for (int i = 0 ; i < SequenceRow::maxTracks ; ++i)
 	{
-		Oscillator *oscillator = new Oscillator();
-		oscillator->setWaveStore(*mWaveStore);
+		OPLLTrack *oscillator = new OPLLTrack();
 		mOscillator[i] = oscillator;
 	}
 }
 
 
-Synth::~Synth()
+OPLLSynth::~OPLLSynth()
 {
-	delete mWaveStore;
+	OPLL_delete(mOPLL);
 	
 	/*
 	
@@ -35,10 +34,4 @@ Synth::~Synth()
 	above! No need to cleanup yourself.
 	
 	*/
-}
-
-
-const WaveStore& Synth::getWaveStore() const
-{
-	return *mWaveStore;
 }

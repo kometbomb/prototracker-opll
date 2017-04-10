@@ -1,5 +1,5 @@
 #include "Player.h"
-#include "TrackState.h"
+#include "OPLLTrackState.h"
 #include "SequenceRow.h"
 
 Player::Player(Song& song)
@@ -12,7 +12,7 @@ Player::Player(Song& song)
 	*/
 	
 	for (int i = 0 ; i < SequenceRow::maxTracks ; ++i)
-		trackState[i] = new TrackState();
+		trackState[i] = new OPLLTrackState();
 }
 
 Player::~Player()

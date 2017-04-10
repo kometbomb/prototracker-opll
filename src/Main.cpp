@@ -5,7 +5,7 @@
 #include "Song.h"
 #include "FileSection.h"
 #include "Player.h"
-#include "Synth.h"
+//#include "OPLLSynth.h"
 #include "Mixer.h"
 #include "EditorState.h"
 #include "Emscripten.h"

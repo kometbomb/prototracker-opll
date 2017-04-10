@@ -1,5 +1,5 @@
 #include "IOscillator.h"
-#include "TrackState.h"
+#include "ITrackState.h"
 
 IOscillator::~IOscillator()
 {

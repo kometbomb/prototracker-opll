@@ -2,11 +2,9 @@
 
 #include "ITrackState.h"
 
-struct TrackState: public ITrackState
+struct OPLLTrackState: public ITrackState
 {
-	int wave, queuedWave;
-	
-	TrackState();
+	OPLLTrackState();
 	
 	virtual bool handleEffectZeroTick(const EffectParam& effect, PlayerState& playerState);
 	virtual void handleEffectAnyTick(const EffectParam& effect, PlayerState& playerState);
