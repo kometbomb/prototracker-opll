@@ -1,4 +1,4 @@
-#include "TrackState.h"
+#include "OPLLTrackState.h"
 #include "EffectParam.h"
 
 OPLLTrackState::OPLLTrackState()

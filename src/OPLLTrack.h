@@ -2,14 +2,17 @@
 
 #include "IOscillator.h"
 
-struct OPLL;
+extern "C" {
+    struct __OPLL;
+}
+
 
 class OPLLTrack: public IOscillator
 {
-	OPLL* mOPLL;
+	struct __OPLL* mOPLL;
 public:
 	
-	OPLLTrack(OPLL* aOPLL);
+	OPLLTrack(struct __OPLL* aOPLL);
 	virtual ~OPLLTrack();
 	
 	virtual void triggerNote();

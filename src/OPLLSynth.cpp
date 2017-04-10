@@ -3,7 +3,7 @@
 #include "SequenceRow.h"
 #include "Sample.h"
 #include "SDL.h"
-#include "emu32413/emu32413.h"
+#include "emu2413/emu2413.h"
 
 OPLLSynth::OPLLSynth()
 	: ISynth()
@@ -18,7 +18,7 @@ OPLLSynth::OPLLSynth()
 	
 	for (int i = 0 ; i < SequenceRow::maxTracks ; ++i)
 	{
-		OPLLTrack *oscillator = new OPLLTrack();
+		OPLLTrack *oscillator = new OPLLTrack(mOPLL);
 		mOscillator[i] = oscillator;
 	}
 }

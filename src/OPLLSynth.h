@@ -2,11 +2,13 @@
 
 #include "ISynth.h"
 
-struct OPLL;
+extern "C" {
+    struct __OPLL;
+}
 
 class OPLLSynth: public ISynth
 {
-	OPLL *mOPLL;
+	struct __OPLL* mOPLL;
 public:
 	OPLLSynth();
 	virtual ~OPLLSynth();

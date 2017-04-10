@@ -6,7 +6,7 @@
 #include "SequenceRow.h"
 #include "OPLLTrackState.h"
 
-OPLLTrack::OPLLTrack(OPLL* aOPLL)
+OPLLTrack::OPLLTrack(struct __OPLL* aOPLL)
 	: IOscillator(), mOPLL(aOPLL)
 {
 }
@@ -17,7 +17,7 @@ OPLLTrack::~OPLLTrack()
 }
 
 
-void OPLLTrack::handleTrackState(OPLLTrackState& trackState)
+void OPLLTrack::handleTrackState(ITrackState& trackState)
 {
 	IOscillator::handleTrackState(trackState);
 	
