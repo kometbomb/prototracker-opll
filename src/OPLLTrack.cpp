@@ -26,6 +26,34 @@ void OPLLTrack::handleTrackState(ITrackState& trackState)
 	OPLLTrackState& opllTrackState = static_cast<OPLLTrackState&>(trackState);
 	
 	setInstrument(opllTrackState.mInstrument);
+	
+	// Check if key off is signaled by OPLLTrackState
+	
+	if (opllTrackState.mKeyOff)
+	{
+		releaseNote();
+		
+		// mKeyOff signal is consumed - set to false
+		opllTrackState.mKeyOff = false;
+	}
+	
+	if (opllTrackState.mRhythmBits)
+	{
+		triggerRhythm(opllTrackState.mRhythmBits);
+		
+		// Consumed the bits - set zero
+		opllTrackState.mRhythmBits = 0;
+	}
+}
+
+
+void OPLLTrack::triggerRhythm(int mask)
+{
+	// Send key off (all rhythm bits off) OR'd with rythm mode bit
+	OPLL_writeReg(mOPLL, 0x0e, 0x20);
+	
+	// Send key ons from the mask OR'd with rhythm mode bit
+	OPLL_writeReg(mOPLL, 0x0e, mask | 0x20);
 }
 
 
@@ -41,10 +69,13 @@ void OPLLTrack::triggerNote()
 	
 	OPLL_writeReg(mOPLL, 6, (sl << 4) + rr);
 	
+	// Send key off
 	sendFrequency(false);
+	
+	// Send key on
 	sendFrequency(true);
 	
-	OPLL_writeReg(mOPLL, 0x30 + mChannelIndex, (mInstrument << 4) | vl);
+	OPLL_writeReg(mOPLL, 0x30 + mChannelIndex, (mInstrument << 4) | mAttenuation);
 	
 	mKeyOn = true;
 }
@@ -52,8 +83,13 @@ void OPLLTrack::triggerNote()
 
 void OPLLTrack::sendFrequency(bool keyOn)
 {
+	// Send the lower 8 F-number bits
 	OPLL_writeReg(mOPLL, 0x10 + mChannelIndex, mFNumber & 0xff);
-	OPLL_writeReg(mOPLL, 0x20 + mChannelIndex, (keyOn ? 0x10 : 0) | (mFNumber >> 8));
+	
+	// Send key on/key off OR'd with sustain bit and the F-number + block
+	OPLL_writeReg(mOPLL, 0x20 + mChannelIndex, (keyOn ? 0x30 : 0x20) | (mFNumber >> 8));
+	
+	// Instrument number and attenuation
 	OPLL_writeReg(mOPLL, 0x30 + mChannelIndex, (mInstrument << 4) | mAttenuation);
 }
 
@@ -69,15 +105,18 @@ void OPLLTrack::setFrequency(float frequency)
 	mFNumber = frequency * 440 * (1 << (20)) / 49716;
 	mBlockNumber = 0;
 	
+	// While F-number exceeds the F-number limits raise the block (octave)
+	// and halve the F-number
+	
 	while (mFNumber >= 0x200 && mBlockNumber < 7)
 	{
 		mFNumber >>= 1;
 		mBlockNumber++;
 	}
 	
-	mFNumber |= mBlockNumber << 9;
+	// Combine block number with F-number
 	
-	//printf("%x %x\n", mFNumber, mBlockNumber);
+	mFNumber |= mBlockNumber << 9;
 	
 	sendFrequency(mKeyOn);
 }
@@ -91,6 +130,14 @@ void OPLLTrack::setVolume(int volume)
 	//mVolume = volume * volumeResolution / TrackState::maxVolume / SequenceRow::maxTracks;
 	
 	mAttenuation = std::max(0, 15 - 15 * volume / 64);
+}
+
+
+void OPLLTrack::releaseNote()
+{
+	mKeyOn = false;
+	
+	sendFrequency(false);
 }
 
 
@@ -110,9 +157,6 @@ void OPLLTrack::render(Sample16 *buffer, int numSamples, int offset)
 		int sample[2];
 		
 		OPLL_calc_stereo(mOPLL, sample);
-		
-		//sample [0]= 10000;
-		//sample [1]= 10000;
 		
 		buffer[i].left += sample[0];
 		buffer[i].right += sample[1];

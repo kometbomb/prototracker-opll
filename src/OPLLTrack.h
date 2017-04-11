@@ -22,6 +22,9 @@ public:
 	OPLLTrack(int channel, struct __OPLL* aOPLL);
 	virtual ~OPLLTrack();
 	
+	void triggerRhythm(int mask);
+	void releaseNote();
+	
 	virtual void triggerNote();
 	virtual void handleTrackState(ITrackState& trackState);
 	virtual void setFrequency(float frequency);

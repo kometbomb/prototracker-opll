@@ -4,7 +4,14 @@
 
 struct OPLLTrackState: public ITrackState
 {
+	// Current instrument
 	int mInstrument;
+	
+	// Bitmask for drums
+	int mRhythmBits;
+	
+	// Signal key off
+	bool mKeyOff;
 	
 	OPLLTrackState();
 	
