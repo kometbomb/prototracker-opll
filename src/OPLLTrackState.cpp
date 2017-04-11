@@ -24,7 +24,7 @@ bool OPLLTrackState::handleEffectZeroTick(const EffectParam& effect, PlayerState
 		// Trigger OPLL rhythm (bitmask)
 		
 		case 'r':
-			mRhythmBits = asByte & 15;
+			mRhythmBits = asByte & 31;
 			break;
 		
 		default:
