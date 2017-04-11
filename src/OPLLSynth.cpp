@@ -5,10 +5,14 @@
 #include "SDL.h"
 #include "emu2413/emu2413.h"
 
+#ifndef SAMPLERATE
+#define SAMPLERATE 44100
+#endif
+
 OPLLSynth::OPLLSynth()
 	: ISynth()
 {
-	mOPLL = OPLL_new(3579545, 44100);
+	mOPLL = OPLL_new(3579545, SAMPLERATE);
 	
 	/* 
 	
