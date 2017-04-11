@@ -50,7 +50,8 @@ void ISynth::render(Sample16 *buffer, int numSamples)
 	
 	for (int i = 0 ; i < SequenceRow::maxTracks ; ++i)
 	{
-		mOscillator[i]->render(mPreviousOscillatorOutput + oscillatorProbeLength * i, oscillatorProbeLength);
+		mOscillator[i]->render(buffer, numSamples);
+		/*mOscillator[i]->render(mPreviousOscillatorOutput + oscillatorProbeLength * i, oscillatorProbeLength);
 		
 		Sample16* src = mPreviousOscillatorOutput + oscillatorProbeLength * i;
 		Sample16* dest = buffer;
@@ -63,6 +64,6 @@ void ISynth::render(Sample16 *buffer, int numSamples)
 			src++;
 		}
 		
-		mOscillator[i]->render(buffer + oscillatorProbeLength, numSamples - oscillatorProbeLength, oscillatorProbeLength);
+		mOscillator[i]->render(buffer + oscillatorProbeLength, numSamples - oscillatorProbeLength, oscillatorProbeLength);*/
 	}
 }

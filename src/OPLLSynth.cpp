@@ -8,7 +8,7 @@
 OPLLSynth::OPLLSynth()
 	: ISynth()
 {
-	mOPLL = OPLL_new(4000000, 44100);
+	mOPLL = OPLL_new(3579545, 44100);
 	
 	/* 
 	
@@ -18,7 +18,7 @@ OPLLSynth::OPLLSynth()
 	
 	for (int i = 0 ; i < SequenceRow::maxTracks ; ++i)
 	{
-		OPLLTrack *oscillator = new OPLLTrack(mOPLL);
+		OPLLTrack *oscillator = new OPLLTrack(i, mOPLL);
 		mOscillator[i] = oscillator;
 	}
 }

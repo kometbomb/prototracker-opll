@@ -2,7 +2,7 @@
 #include "EffectParam.h"
 
 OPLLTrackState::OPLLTrackState()
-	: ITrackState()
+	: ITrackState(), mInstrument(1)
 {
 
 }
@@ -10,10 +10,14 @@ OPLLTrackState::OPLLTrackState()
 
 bool OPLLTrackState::handleEffectZeroTick(const EffectParam& effect, PlayerState& playerState)
 {
-	//int asByte = effect.getParamsAsByte();
+	int asByte = effect.getParamsAsByte();
 	
 	switch (effect.effect)
 	{
+		case 'i':
+			mInstrument = asByte & 15;
+			break;
+		
 		default:
 			return ITrackState::handleEffectZeroTick(effect, playerState);
 	}

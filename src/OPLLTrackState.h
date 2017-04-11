@@ -4,6 +4,8 @@
 
 struct OPLLTrackState: public ITrackState
 {
+	int mInstrument;
+	
 	OPLLTrackState();
 	
 	virtual bool handleEffectZeroTick(const EffectParam& effect, PlayerState& playerState);
