@@ -10,3 +10,6 @@ Jxx		Jump to macro row xx (immediate)
 Kxx		Set volume to zero at tick xx (K00 = immediately)
 Mxx		Set macro to xx
 Sxx		Set macro speed to xx ticks per row
+---
+Ixx		Select OPLL instrument
+Rxx		Trigger OPLL rhythm (bitmask)
