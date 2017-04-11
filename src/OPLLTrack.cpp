@@ -102,7 +102,7 @@ void OPLLTrack::setInstrument(int instrument)
 
 void OPLLTrack::setFrequency(float frequency)
 {
-	mFNumber = frequency * 440 * (1 << (20)) / 49716;
+	mFNumber = frequency * 440 * (1 << (24)) / 49716;
 	mBlockNumber = 0;
 	
 	// While F-number exceeds the F-number limits raise the block (octave)
@@ -124,10 +124,7 @@ void OPLLTrack::setFrequency(float frequency)
 
 void OPLLTrack::setVolume(int volume)
 {
-	// This sets to the volume to 1/SequenceRow::maxTracks (25 %)
-	// to avoid clipping if all tracks output at max signal.
-	
-	//mVolume = volume * volumeResolution / TrackState::maxVolume / SequenceRow::maxTracks;
+	// Should be converted to a linear ramp
 	
 	mAttenuation = std::max(0, 15 - 15 * volume / 64);
 }
