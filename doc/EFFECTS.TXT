@@ -13,6 +13,7 @@ Sxx		Set macro speed to xx ticks per row
 ---
 Ixx		Select OPLL instrument
 Rxx		Trigger OPLL rhythm (bitmask)
+Oxx		Trigger key-off on tick xx (similar to Kxx)
 4xy		Set carrier attack (x)/decay (y)
 5xy		Set modulator attack (x)/decay (y)
 6xy		Set carrier sustain (x)/release (y)
