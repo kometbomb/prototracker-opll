@@ -2,7 +2,7 @@
 
 struct SequenceRow
 {
-	static const int maxTracks = 4;
+	static const int maxTracks = 6;
 	
 	int pattern[maxTracks];
 	
