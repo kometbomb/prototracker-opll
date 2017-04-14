@@ -6,11 +6,13 @@
 #include "Sample.h"
 #include "SequenceRow.h"
 #include "OPLLTrackState.h"
+#include "OPLLSynth.h"
 #include "emu2413/emu2413.h"
 
-OPLLTrack::OPLLTrack(int channel, struct __OPLL* aOPLL)
-	: IOscillator(), mChannelIndex(channel), mOPLL(aOPLL), mAttenuation(8), mFNumber(0), mBlockNumber(0), mInstrument(0), mKeyOn(false)
+OPLLTrack::OPLLTrack(int channel, OPLLSynth& synth)
+	: IOscillator(), mChannelIndex(channel), mSynth(synth), mAttenuation(8), mFNumber(0), mBlockNumber(0), mInstrument(0), mKeyOn(false)
 {
+	mOPLL = mSynth.getOPLL();
 }
 
 
@@ -44,6 +46,85 @@ void OPLLTrack::handleTrackState(ITrackState& trackState)
 		// Consumed the bits - set zero
 		opllTrackState.mRhythmBits = 0;
 	}
+	
+	/*
+	int mCarrierAD, mModulatorAD;
+	int mCarrierSR, mModulatorSR;
+	int mCarrierKeyscale, mModulatorKeyscale;
+	int mCarrierVibAmpEG, mModulatorVibAmpEG;
+	*/
+	
+	if (opllTrackState.mModulation >= 0)
+	{
+		mSynth.sendModulation(opllTrackState.mModulation);
+		opllTrackState.mModulation = -1;
+	}
+	
+	if (opllTrackState.mFeedback >= 0)
+	{
+		mSynth.sendFeedback(opllTrackState.mFeedback);
+		opllTrackState.mFeedback = -1;
+	}
+	
+	if (opllTrackState.mCarrierMul >= 0)
+	{
+		mSynth.sendMul(0, opllTrackState.mCarrierMul);
+		opllTrackState.mCarrierMul = -1;
+	}
+	
+	if (opllTrackState.mModulatorMul >= 0)
+	{
+		mSynth.sendMul(1, opllTrackState.mModulatorMul);
+		opllTrackState.mModulatorMul = -1;
+	}
+	
+	if (opllTrackState.mCarrierAD >= 0)
+	{
+		mSynth.sendEnvelopeAD(0, opllTrackState.mCarrierAD);
+		opllTrackState.mCarrierAD = -1;
+	}
+	
+	if (opllTrackState.mModulatorAD >= 0)
+	{
+		mSynth.sendEnvelopeAD(1, opllTrackState.mModulatorAD);
+		opllTrackState.mModulatorAD = -1;
+	}
+	
+	if (opllTrackState.mCarrierSR >= 0)
+	{
+		mSynth.sendEnvelopeSR(0, opllTrackState.mCarrierSR);
+		opllTrackState.mCarrierSR = -1;
+	}
+	
+	if (opllTrackState.mModulatorSR >= 0)
+	{
+		mSynth.sendEnvelopeSR(1, opllTrackState.mModulatorSR);
+		opllTrackState.mModulatorSR = -1;
+	}
+	
+	if (opllTrackState.mCarrierVibAMEG >= 0)
+	{
+		mSynth.sendAMVibEGKSR(0, opllTrackState.mCarrierVibAMEG);
+		opllTrackState.mCarrierVibAMEG = -1;
+	}
+	
+	if (opllTrackState.mModulatorVibAMEG >= 0)
+	{
+		mSynth.sendAMVibEGKSR(1, opllTrackState.mModulatorVibAMEG);
+		opllTrackState.mModulatorVibAMEG = -1;
+	}
+	
+	if (opllTrackState.mCarrierKeyscale >= 0)
+	{
+		mSynth.sendKeyScale(0, opllTrackState.mCarrierKeyscale);
+		opllTrackState.mCarrierKeyscale = -1;
+	}
+	
+	if (opllTrackState.mModulatorKeyscale >= 0)
+	{
+		mSynth.sendKeyScale(1, opllTrackState.mModulatorKeyscale);
+		opllTrackState.mModulatorKeyscale = -1;
+	}
 }
 
 
@@ -59,16 +140,6 @@ void OPLLTrack::triggerRhythm(int mask)
 
 void OPLLTrack::triggerNote()
 {
-	int ar = 8;
-    int dr = 8;
-    OPLL_writeReg(mOPLL, 4, (ar << 4) + dr);
-    
-    int sl = 8;
-    int rr = 8;
-	int vl = mAttenuation;
-	
-	OPLL_writeReg(mOPLL, 6, (sl << 4) + rr);
-	
 	// Send key off
 	sendFrequency(false);
 	
@@ -79,6 +150,8 @@ void OPLLTrack::triggerNote()
 	
 	mKeyOn = true;
 }
+
+
 
 
 void OPLLTrack::sendFrequency(bool keyOn)

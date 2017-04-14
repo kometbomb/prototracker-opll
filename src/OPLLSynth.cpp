@@ -22,7 +22,7 @@ OPLLSynth::OPLLSynth()
 	
 	for (int i = 0 ; i < SequenceRow::maxTracks ; ++i)
 	{
-		OPLLTrack *oscillator = new OPLLTrack(i, mOPLL);
+		OPLLTrack *oscillator = new OPLLTrack(i, *this);
 		mOscillator[i] = oscillator;
 	}
 	
@@ -65,4 +65,103 @@ OPLLSynth::~OPLLSynth()
 	above! No need to cleanup yourself.
 	
 	*/
+}
+
+
+struct __OPLL* OPLLSynth::getOPLL()
+{
+	return mOPLL;
+}
+
+
+void OPLLSynth::sendModulation(int modulation)
+{
+	mModulation = modulation;
+	
+	updateRegister02();
+}
+
+
+void OPLLSynth::sendMul(int op, int mul)
+{
+	mOp[op].MUL = mul & 15;
+	updateRegister00(op);
+}
+
+
+void OPLLSynth::sendFeedback(int feedback)
+{
+	mFeedback = feedback;
+	updateRegister03();
+}
+
+
+void OPLLSynth::sendAMVibEGKSR(int op, int bits)
+{
+	mOp[op].AM = (bits & 0x8) ? 1 : 0;
+	mOp[op].VIB = (bits & 0x4) ? 1 : 0;
+	mOp[op].EG = (bits & 0x2) ? 1 : 0;
+	mOp[op].KSR = (bits & 0x1);
+	
+	updateRegister00(op);
+}
+
+
+void OPLLSynth::sendKeyScale(int op, int keyScale)
+{
+	if (op == 0)
+	{
+		mCarrierKeyScale = keyScale & 3;
+		updateRegister02();
+	}
+	else
+	{
+		mModulatorKeyScale = keyScale & 3;
+		updateRegister03();
+	}
+}
+
+
+void OPLLSynth::sendEnvelopeAD(int op, int ad)
+{
+	OPLL_writeReg(mOPLL, 0x04 + op, ad);
+}
+
+
+void OPLLSynth::sendEnvelopeSR(int op, int sr)
+{
+	OPLL_writeReg(mOPLL, 0x06 + op, sr);
+}
+
+
+void OPLLSynth::sendShape(int op, int shape)
+{
+	if (op == 0)
+	{
+		mCarrierShape = shape ? 1 : 0;
+	}
+	else
+	{
+		mModulatorShape = shape ? 1 : 0;
+	}
+	
+	updateRegister03();
+}
+
+
+void OPLLSynth::updateRegister00(int op)
+{
+	OPLL_writeReg(mOPLL, 0x00 + op, (mOp[op].AM << 7) | (mOp[op].VIB << 6) | (mOp[op].EG << 5) | (mOp[op].KSR << 4) | mOp[op].MUL);
+}
+
+
+void OPLLSynth::updateRegister02()
+{
+	OPLL_writeReg(mOPLL, 0x02, (mCarrierKeyScale << 6) | mModulation);
+}
+
+
+void OPLLSynth::updateRegister03()
+{
+	OPLL_writeReg(mOPLL, 0x03, (mModulatorKeyScale << 6) | (mCarrierShape << 4) | (mModulatorShape << 3) | mFeedback);
 }

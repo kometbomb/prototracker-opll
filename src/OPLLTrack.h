@@ -1,5 +1,7 @@
 #pragma once
 
+struct OPLLSynth;
+
 #include "IOscillator.h"
 
 extern "C" {
@@ -10,6 +12,7 @@ extern "C" {
 class OPLLTrack: public IOscillator
 {
 	int mChannelIndex;
+	OPLLSynth& mSynth;
 	struct __OPLL* mOPLL;
 	
 	int mAttenuation, mFNumber, mBlockNumber, mInstrument;
@@ -19,7 +22,7 @@ class OPLLTrack: public IOscillator
 	
 public:
 	
-	OPLLTrack(int channel, struct __OPLL* aOPLL);
+	OPLLTrack(int channel, OPLLSynth& synth);
 	virtual ~OPLLTrack();
 	
 	void triggerRhythm(int mask);
