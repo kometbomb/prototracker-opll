@@ -200,6 +200,8 @@ void OPLLTrack::setVolume(int volume)
 	// Should be converted to a linear ramp
 	
 	mAttenuation = std::max(0, 15 - 15 * volume / 64);
+	
+	sendFrequency(mKeyOn);
 }
 
 
