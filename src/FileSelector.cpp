@@ -9,6 +9,7 @@
 #include <cstring>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <algorithm>
 
 FileSelector::FileSelector(EditorState& editorState)
 	: Editor(editorState), mSelectedItem(0), mCheckOverwrite(false)
@@ -91,9 +92,9 @@ void FileSelector::accept(bool isFinal)
 		mParent->onFileSelectorEvent(*this, true);
 	else
 	{
-		if (getSelectedItem().isDirectory)
+		if (FileItem::checkDirectory(getSelectedPath()))
 		{
-			setPath(getSelectedItem().path.c_str());
+			setPath(getSelectedPath());
 			return;
 		}
 	
@@ -267,6 +268,8 @@ void FileSelector::populate()
 	
 	closedir(directory);
 	
+	std::sort(mItems.begin(), mItems.end(), FileItem::directorySort);
+	
 	selectItem(0);
 }
 
@@ -312,3 +315,33 @@ FileSelector::FileItem::FileItem(bool _isDirectory, const char *_path, int _size
 	: isDirectory(_isDirectory), path(_path), size(_size)
 {
 }
+
+
+bool FileSelector::FileItem::directorySort(const FileSelector::FileItem& a, const FileSelector::FileItem& b)
+{
+	// Directories first
+	
+	if (a.isDirectory && !b.isDirectory)
+		return true;
+	
+	// Then in alphabetical order
+	
+	if (strcmp(a.path.c_str(), b.path.c_str()) < 0)
+		return true;
+	
+	return false;
+}
+
+
+bool FileSelector::FileItem::checkDirectory(const char *name)
+{
+	struct stat statBuf;
+		
+	if (!stat(name, &statBuf))
+	{
+		return (statBuf.st_mode & S_IFDIR) == S_IFDIR;
+	}
+	
+	return false;
+}
+
