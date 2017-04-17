@@ -1,4 +1,4 @@
-OUTPUT=prototracker
+OUTPUT=prototracker-opll
 SRC=src/*.cpp
 
 $(OUTPUT): $(CPP_SRC) $(CPP_H) $(C_OBJ)

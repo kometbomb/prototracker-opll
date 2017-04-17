@@ -1,10 +1,7 @@
 OUTPUT=prototracker-opll.exe
-CPP_SRC=src/*.cpp
-EMU_SRC=src/emu2413/*.c
-EMU_OBJ=emu2413.o
 
-$(OUTPUT): $(CPP_SRC) src/*.h $(EMU_OBJ)
-	g++ -DSCALE=1 -O3 -Wformat -std=c++11 -o $@ $(CPP_SRC) $(EMU_OBJ) -lmingw32 -lSDL2_image -lSDL2main -lSDL2 -Ic:/mingw/include/SDL2 -Ic:/tdm-gcc-32/include/SDL2 -s
+$(OUTPUT): $(CPP_SRC) $(CPP_H) $(C_OBJ)
+	g++ -DSCALE=2 -O3 -Wformat -std=c++11 -o $@ $(CPP_SRC) $(C_OBJ) -lmingw32 -lSDL2_image -lSDL2main -lSDL2 -Ic:/mingw/include/SDL2 -Ic:/tdm-gcc-32/include/SDL2 -s
 
-$(EMU_OBJ): $(EMU_SRC) src/emu2413/*.h
-	gcc -c -o $@ $(EMU_SRC) -O3 -Wall -std=gnu99
+$(C_OBJ): $(C_SRC) $(C_H)
+	gcc -c -o $@ $(C_SRC) -O3 -Wall -std=gnu99
