@@ -1,5 +1,5 @@
 Font "font.png" 8 8
-GUI "gui.png" 423 240
+GUI "gui.png" 423 272
 
 # this is a comment
 # element		x 	y	w	h 	track
@@ -11,8 +11,8 @@ Oscilloscope 	202 2 	47 	61 	4
 Oscilloscope 	252 2 	47 	61 	5
 
 # element     	x 	y  	w	h  	m1	m2
-PatternEditor	3 	78	338	160	4	4
-MacroEditor		344	78 	76 	160	4 	4
+PatternEditor	3 	78	338	194	4	4
+MacroEditor		344	78 	76 	194	4 	4
 SequenceEditor	305	3 	119	40	2 	0
 
 # element     	x 	y  	w	h
