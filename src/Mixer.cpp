@@ -28,16 +28,9 @@ Mixer::Mixer(IPlayer& player, ISynth& synth)
 
 Mixer::~Mixer()
 {
-	mThreadRunning = false;
-	
-	if (mThread != NULL)
-	{
-		SDL_WaitThread(mThread, NULL);
-	}
+	deinitAudio();
 	
 	free(mConvert);
-	
-	deinitAudio();
 }
 
 
@@ -45,6 +38,12 @@ void Mixer::runThread()
 {
 	initAudio();
 	SDL_PauseAudio(0);
+}
+
+
+void Mixer::stopThread()
+{
+	deinitAudio();
 }
 
 
@@ -85,6 +84,9 @@ void Mixer::initAudio()
 	mSamples = 0;
 	mBufferSize = have.samples;
 	
+	if (mBuffer != NULL)
+		delete[] mBuffer;
+		
 	mBuffer = new Sample16[mBufferSize];
 	
 	SDL_BuildAudioCVT(mConvert, want.format, want.channels, have.freq, have.format, have.channels, have.freq);
@@ -95,11 +97,22 @@ void Mixer::initAudio()
 
 void Mixer::deinitAudio()
 {
+	mThreadRunning = false;
+	
+	if (mThread != NULL)
+	{
+		SDL_WaitThread(mThread, NULL);
+	}
+	
 	if (mAudioOpened)
 		SDL_CloseAudio();
 	
+	mAudioOpened = false;
+	
 	if (mBuffer != NULL)
 		delete[] mBuffer;
+	
+	mBuffer = NULL;
 }
 
 
