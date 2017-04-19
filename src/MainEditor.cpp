@@ -87,6 +87,9 @@ void MainEditor::stopDragging()
 	
 bool MainEditor::onEvent(SDL_Event& event)
 {
+	/* If a modal dialog (FileSelector etc.) is visible,
+	 * send events to that Editor instead.
+	 */
 	if (mModal != NULL)
 	{
 		return mModal->onEvent(event);
@@ -94,7 +97,9 @@ bool MainEditor::onEvent(SDL_Event& event)
 	
 	Editor* target = getFocus();
 
-	
+	/* Focus on GUI elements when user clicks on them.
+	 * Also, start drag (used by drag scroll below this)
+	 */
 	if (event.type == SDL_MOUSEBUTTONDOWN)
 	{
 		SDL_Point point = {event.button.x/SCALE, event.button.y/SCALE};
@@ -115,6 +120,10 @@ bool MainEditor::onEvent(SDL_Event& event)
 		stopDragging();
 	}
 #if MOUSEDRAG
+	/* Emulate dragging by mouse (or touch events) by sending cursor key
+	 * events per every 8 pixels (should be font width/height to be accurate)
+	 */
+
 	else if (event.type == SDL_MOUSEMOTION && mIsDragging)
 	{
 		if (abs(event.motion.y - mDragStartY) >= SCALE * 8)
@@ -148,6 +157,7 @@ bool MainEditor::onEvent(SDL_Event& event)
 
 	if (target->onEvent(event))
 	{
+		// Target Editor consumed the event, we don't need to process it here.
 		return true;
 	}
 	
@@ -178,19 +188,31 @@ bool MainEditor::onEvent(SDL_Event& event)
 				refreshAll();
 				return true;
 			
+			/* Mute tracks */
 			case SDLK_1:
 			case SDLK_2:
 			case SDLK_3:
 			case SDLK_4:
+			case SDLK_5:
+			case SDLK_6:
+			case SDLK_7:
+			case SDLK_8:
+			case SDLK_9:
 			
 				if (event.key.keysym.mod & KMOD_ALT)
 				{
-					mPlayer.getTrackState(event.key.keysym.sym - SDLK_1).enabled ^= true;
-					return true;
+					int track = event.key.keysym.sym - SDLK_1;
+
+					if (track < SequenceRow::maxTracks)
+					{
+						mPlayer.getTrackState(track).enabled ^= true;
+						return true;
+					}
 				}
 				
 				break;
 				
+			/* F5 and F6 also used for laptops etc. keyboards with (very) limited key layout */
 			case SDLK_F5:
 			case SDLK_RCTRL:
 				mPlayer.play(mEditorState.sequenceEditor.currentRow);
@@ -198,13 +220,14 @@ bool MainEditor::onEvent(SDL_Event& event)
 				refreshAll();
 				return true;
 			
+			/* F5 and F6 also used for laptops etc. keyboards with (very) limited key layout */
 			case SDLK_F6:
 			case SDLK_RSHIFT:
 				mPlayer.play(mEditorState.sequenceEditor.currentRow, PlayerState::PlaySequenceRow);
 				mEditorState.editMode = false;
 				refreshAll();
 				return true;
-				
+					
 			case SDLK_SPACE:
 				if (mEditorState.followPlayPosition)
 				{
@@ -223,8 +246,14 @@ bool MainEditor::onEvent(SDL_Event& event)
 				{
 					mEditorState.editMode = !mEditorState.editMode;
 					refreshAll();
+					
+					// Should only mute tracks when stopped, i.e.
+					// the user has played a note and wants to stop it
+					// and not when editing while playing the song
+					if (mPlayerState.mode == PlayerState::Stop)
+						mPlayer.muteTracks();
 				}
-				
+
 				return true;
 				
 			case SDLK_F7:
@@ -402,7 +431,8 @@ bool MainEditor::loadSong(const char *path)
 		delete section;
 		delete[] data;
 		
-		mEditorState = EditorState();
+		// Use reset() instead of assigning to avoid CopyBuffer double free
+		mEditorState.reset();
 		
 		syncPlayerState();
 		syncSongParameters(mSong);
@@ -760,6 +790,6 @@ const std::string& MainEditor::getSongBase64()
 void MainEditor::newSong()
 {
 	mSong.clear();
-	mEditorState = EditorState();
+	mEditorState.reset();
 	refreshAll();
 }
