@@ -185,7 +185,7 @@ void FileSelector::renderItem(Renderer& renderer, const SDL_Rect& area, const Fi
 	if (item.isDirectory)
 		renderer.renderTextV(area, color, "<%-25s>     DIR", item.path.c_str());
 	else
-		renderer.renderTextV(area, color, "%-25s %9d", item.path.c_str(), item.size);
+		renderer.renderTextV(area, color, "%-25s %9s", item.path.c_str(), FileItem::formatSize(item.size));
 }
 
 	
@@ -324,9 +324,9 @@ bool FileSelector::FileItem::directorySort(const FileSelector::FileItem& a, cons
 	if (a.isDirectory && !b.isDirectory)
 		return true;
 	
-	// Then in alphabetical order
+	// Then in alphabetical order if BOTH a & b are either directories or files
 	
-	if (strcmp(a.path.c_str(), b.path.c_str()) < 0)
+	if (a.isDirectory == b.isDirectory && strcmp(a.path.c_str(), b.path.c_str()) < 0)
 		return true;
 	
 	return false;
@@ -345,3 +345,32 @@ bool FileSelector::FileItem::checkDirectory(const char *name)
 	return false;
 }
 
+
+const char *FileSelector::FileItem::formatSize(int size)
+{
+	static char buffer[50];
+
+	const struct { int divisor; const char *unit; } units[] = {
+		{1, "B"},
+		{1024, "k"},
+		{1024 * 1024, "M"},
+		{1024 * 1024 * 1024, "G"},
+		{0, NULL}
+	};
+
+	int divisor = 0;
+	const char *unit = NULL;
+
+	for (int i = 0 ; units[i].divisor > 0 ; ++i)
+	{
+		if (size >= units[i].divisor)
+		{
+			divisor = units[i].divisor;
+			unit = units[i].unit;
+		}
+	}
+
+	snprintf(buffer, sizeof(buffer), "%d%s", size / divisor, unit);
+
+	return buffer;
+}
