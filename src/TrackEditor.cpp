@@ -365,6 +365,140 @@ bool TrackEditor::onEvent(SDL_Event& event)
 				}
 				break;
 			}
+			
+			case SDL_CONTROLLERBUTTONDOWN: 
+			{
+				bool aPressed = SDL_GameControllerGetButton(SDL_GameControllerFromInstanceID(event.cbutton.which), SDL_CONTROLLER_BUTTON_A);
+				PatternRow& patternRow = getCurrentPatternRow();
+			
+				switch (event.cbutton.button)
+				{
+					case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+					case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+						if (!aPressed)
+						{
+							changeColumn(event.cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT ? -1 : 1);
+						}
+						else
+						{
+							switch (static_cast<int>(mTrackEditorState.currentColumn))
+							{
+								case PatternRow::Column::Note:
+								case PatternRow::Column::NoteParam1:
+								case PatternRow::Column::NoteParam2:
+									// A + LEFT/RIGHT = alter note
+									
+									if (patternRow.note.effect == 'n') 
+									{
+										patternRow.note.setNoteAndOctave(std::max(0, std::min(0xbf, patternRow.note.getNoteWithOctave() + (event.cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT ? -1 : 1))));
+									}
+									break;
+									
+								case PatternRow::Column::EffectType:
+									if (event.cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT)
+									{
+										if (patternRow.effect.effect == '0')
+											patternRow.effect.effect = 'z';
+										else if (patternRow.effect.effect == 'a')
+											patternRow.effect.effect = '9';
+										else 
+											patternRow.effect.effect--;
+									}
+									else
+									{
+										if (patternRow.effect.effect == '9')
+											patternRow.effect.effect = 'a';
+										else if (patternRow.effect.effect == 'z')
+											patternRow.effect.effect = '0';
+										else
+											patternRow.effect.effect++;
+									}
+									break;
+									
+								case PatternRow::Column::EffectParam1:
+								case PatternRow::Column::EffectParam2:
+									patternRow.effect.setParamsFromByte(patternRow.effect.getParamsAsByte() + (event.cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT ? -1 : 1) & 255);
+									break;
+							}
+						}
+						
+						break;
+					
+					case SDL_CONTROLLER_BUTTON_DPAD_UP:
+					case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+						if (!aPressed)
+						{
+							scrollView(event.cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_UP ? -1 : 1);
+						}
+						else
+						{
+							switch (static_cast<int>(mTrackEditorState.currentColumn))
+							{
+								case PatternRow::Column::Note:
+								case PatternRow::Column::NoteParam1:
+								case PatternRow::Column::NoteParam2:
+									// A + LEFT/RIGHT = alter note
+									
+									if (patternRow.note.effect == 'n') 
+									{
+										if (event.cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_DOWN)
+											patternRow.note.param2 = std::max(0, patternRow.note.param2 - 1);
+										else 
+											patternRow.note.param2 = std::min(15, patternRow.note.param2 + 1);
+									}
+									break;
+									
+								case PatternRow::Column::EffectType:
+									break;
+									
+								case PatternRow::Column::EffectParam1:
+								case PatternRow::Column::EffectParam2:
+									patternRow.effect.setParamsFromByte(patternRow.effect.getParamsAsByte() + (event.cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_DOWN ? -16 : 16) & 255);
+									break;
+							}
+						}
+						
+						break;
+						
+					case SDL_CONTROLLER_BUTTON_A:
+						bool bPressed = SDL_GameControllerGetButton(SDL_GameControllerFromInstanceID(event.cbutton.which), SDL_CONTROLLER_BUTTON_B);
+						
+						switch (static_cast<int>(mTrackEditorState.currentColumn))
+						{
+							case PatternRow::Column::Note:
+							case PatternRow::Column::NoteParam1:
+							case PatternRow::Column::NoteParam2:
+								if (bPressed)
+								{
+									// B+A = delete
+									
+									emptyRow(false, PatternRow::FlagNote);
+								}
+								else
+								{
+									if (patternRow.note.isEmpty())
+									{
+										patternRow.note.setNoteAndOctave(mEditorState.octave * 12);
+									}
+								}
+								break;
+								
+							case PatternRow::Column::EffectType:
+							case PatternRow::Column::EffectParam1:
+							case PatternRow::Column::EffectParam2:
+								if (bPressed)
+								{
+									// B+A = delete
+									
+									emptyRow(false, PatternRow::FlagEffect);
+								}
+								break;
+						}
+					
+						break;
+				}
+				break;
+			}
 	}
 	
 	return false;
