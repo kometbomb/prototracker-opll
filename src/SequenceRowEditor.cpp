@@ -138,7 +138,7 @@ bool SequenceRowEditor::onEvent(SDL_Event& event)
 					
 					SequenceRow& sequenceRow = mSong.getSequence().getRow(mTrackEditorState.currentRow);
 					
-					int hex = getHexFromKey(event.key.keysym.sym);
+					int hex = getHexFromKey(event.key.keysym);
 					if (hex != -1)
 					{
 						int& pattern = sequenceRow.pattern[mTrackEditorState.currentTrack];
@@ -285,7 +285,7 @@ void SequenceRowEditor::duplicateRow()
 	SequenceRow& destination = mSong.getSequence().getRow(mTrackEditorState.currentRow);
 	SequenceRow& source = mSong.getSequence().getRow(mTrackEditorState.currentRow + 1);
 	
-	for (int track = 0 ; track <= SequenceRow::maxTracks ; ++track)
+	for (int track = 0 ; track < SequenceRow::maxTracks ; ++track)
 	{
 		destination.pattern[track] = source.pattern[track];
 	}
@@ -293,4 +293,6 @@ void SequenceRowEditor::duplicateRow()
 	mSong.setSequenceLength(mSong.getSequenceLength() + 1);
 	
 	mTrackEditorState.currentRow.notify();
+	
+	showMessage(MessageInfo, "Duplicated sequence row");
 }

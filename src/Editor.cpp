@@ -1,6 +1,7 @@
 #include "Editor.h"
 #include "Renderer.h"
 #include "Color.h"
+#include <cstdio>
 
 
 Editor::Editor(EditorState& editorState, bool wantsFocus)
@@ -109,6 +110,27 @@ void Editor::onListenableChange(Listenable *listenable)
 }
 
 
+void Editor::drawCoveredChildren(Renderer& renderer, const SDL_Rect& area, const SDL_Rect& childArea, int maxIndex)
+{
+	renderer.renderBackground(childArea);
+	
+	for (int index = 0 ; index <= maxIndex && index < mNumChildren ; ++index)
+	{
+		SDL_Rect thisChildArea = mChildrenArea[index];
+		thisChildArea.x += area.x;
+		thisChildArea.y += area.y;
+		
+		SDL_Rect intersection;
+			
+		if (SDL_IntersectRect(&childArea, &thisChildArea, &intersection))
+		{
+			renderer.setClip(intersection);
+			mChildren[index]->draw(renderer, thisChildArea);
+		}
+	}
+}
+
+
 void Editor::drawChildren(Renderer& renderer, const SDL_Rect& area)
 {
 	for (int index = 0 ; index < mNumChildren ; ++index)
@@ -119,7 +141,10 @@ void Editor::drawChildren(Renderer& renderer, const SDL_Rect& area)
 			childArea.x += area.x;
 			childArea.y += area.y;
 			
+			drawCoveredChildren(renderer, area, childArea, index - 1);
+			
 			renderer.setClip(childArea);
+			
 			mChildren[index]->draw(renderer, childArea);
 		}
 	}
@@ -225,4 +250,42 @@ bool Editor::pointInRect(const SDL_Point& point, const SDL_Rect& rect)
 	return point.x >= rect.x && point.x < rect.x + rect.w &&
 		point.y >= rect.y && point.y < rect.y + rect.h;
 #endif
+}
+
+
+void Editor::showMessageV(MessageClass messageClass, const char* message, ...)
+{
+	char dest[1024];
+    va_list argptr;
+    va_start(argptr, message);
+    vsnprintf(dest, sizeof(dest), message, argptr);
+    va_end(argptr);
+	
+	showMessage(messageClass, dest);
+}
+
+
+void Editor::showMessage(MessageClass messageClass, const char* message)
+{
+	if (mParent != NULL)
+		mParent->showMessage(messageClass, message);
+	else 
+		printf("[%s] %s\n", messageClass == MessageInfo ? "INFO" : "ERROR", message);
+}
+
+
+void Editor::onUpdate(int ms)
+{
+	
+}
+
+
+void Editor::update(int ms)
+{
+	onUpdate(ms);
+	
+	for (int index = 0 ; index < mNumChildren ; ++index)
+	{
+		mChildren[index]->update(ms);
+	}
 }

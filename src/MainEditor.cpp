@@ -25,6 +25,8 @@
 #include "TouchRegion.h"
 #include "FileSelector.h"
 #include "Emscripten.h"
+#include "MessageManager.h"
+#include "MessageDisplayer.h"
 #include "App.h"
 #include "SDL.h"
 #include "Theme.h"
@@ -49,6 +51,8 @@ MainEditor::MainEditor(EditorState& editorState, IPlayer& player, PlayerState& p
 	mOscillatorsUpdated = new Listenable();
 	
 	fileSelector = new FileSelector(editorState);
+	
+	mMessageManager = new MessageManager();
 }
 
 
@@ -58,6 +62,8 @@ MainEditor::~MainEditor()
 	delete fileSelector;
 	
 	deleteChildren();
+	
+	delete mMessageManager;
 }
 
 
@@ -207,6 +213,9 @@ bool MainEditor::onEvent(SDL_Event& event)
 						if (track < SequenceRow::maxTracks)
 						{
 							mPlayer.getTrackState(track).enabled ^= true;
+							
+							showMessageV(MessageInfo, "%s track %d", mPlayer.getTrackState(track).enabled ? "Unmuted" : "Muted", track);
+							
 							return true;
 						}
 					}
@@ -286,6 +295,9 @@ bool MainEditor::onEvent(SDL_Event& event)
 				case SDLK_CAPSLOCK:
 				case SDLK_SCROLLLOCK:
 					mEditorState.followPlayPosition = !mEditorState.followPlayPosition;
+					
+					showMessage(MessageInfo, mEditorState.followPlayPosition ? "Cursor now follows play position" : "Disabled play position following");
+					
 					break;
 					
 				default:
@@ -430,7 +442,8 @@ bool MainEditor::loadSong(const char *path)
 		
 		if (!section)
 		{
-			printf("Error!\n");
+			showMessage(MessageError, "Failed to read song data");
+			
 			delete section;
 			delete[] data;
 			return false;
@@ -438,11 +451,29 @@ bool MainEditor::loadSong(const char *path)
 		
 		mPlayer.stop();
 		mPlayer.reset();
+		
+		Song::UnpackError result = mSong.unpack(*section);
 				
-		if (mSong.unpack(*section) != Song::Success)
+		if (result != Song::Success)
 		{
-			// popup here
-			printf("Error!\n");
+			switch (result)
+			{
+				default:
+					break;
+					
+				case Song::NotASong:
+					showMessage(MessageError, "File is not a song");
+					break;
+					
+				case Song::ErrorVersion:
+					showMessage(MessageError, "Song version is unsupported");
+					break;
+				
+				case Song::ErrorRead:
+					showMessage(MessageError, "Failed to read song data");
+					break;
+			}
+			
 			delete section;
 			delete[] data;
 			return false;
@@ -462,7 +493,7 @@ bool MainEditor::loadSong(const char *path)
 	}
 	else
 	{
-		printf("Error!\n");
+		showMessageV(MessageError, "Could not open %s", path);
 		return false;
 	}
 }
@@ -516,11 +547,15 @@ void MainEditor::onFileSelectorEvent(const Editor& fileSelector, bool accept)
 		switch (id)
 		{
 			case FileSelectionLoad:
-				loadSong(reinterpret_cast<const FileSelector&>(fileSelector).getSelectedPath());
+				if (loadSong(reinterpret_cast<const FileSelector&>(fileSelector).getSelectedPath()))
+					showMessage(MessageInfo, "Song loaded");
 				break;
 				
 			case FileSelectionSave:
-				saveSong(reinterpret_cast<const FileSelector&>(fileSelector).getSelectedPath());
+				if (saveSong(reinterpret_cast<const FileSelector&>(fileSelector).getSelectedPath()))
+					showMessage(MessageInfo, "Song saved");
+				else
+					showMessage(MessageError, "Song was not saved");
 				break;
 		}
 	}
@@ -583,7 +618,7 @@ bool MainEditor::loadState()
 	
 	if (!section)
 	{
-		printf("Error!\n");
+		showMessage(MessageError, "Could not restore editor state");
 		
 		delete section;
 		delete[] data;
@@ -593,13 +628,16 @@ bool MainEditor::loadState()
 	
 	if (!mEditorState.unpack(*section))
 	{
-		printf("EditorState load failed\n");
+		showMessage(MessageError, "Could not restore editor state");
+	}
+	else 
+	{
+		showMessage(MessageInfo, "Editor state restored");
+		setMacro(mEditorState.macro);
 	}
 	
 	delete section;
 	delete[] data;
-	
-	setMacro(mEditorState.macro);
 	
 	return true;
 }
@@ -614,6 +652,8 @@ void MainEditor::saveState()
 	FILE *f = fopen(getUserFile("editorstate").c_str(), "wb");
 	fwrite(section->getPackedData(), section->getPackedSize(), 1, f);
 	fclose(f);	
+	
+	showMessage(MessageInfo, "Editor state saved");
 	
 	//printf("%s\n", section->getBase64());
 	
@@ -743,6 +783,9 @@ bool MainEditor::loadElements(const Theme& theme)
 	
 	setMacro(0);
 	
+	mMessageDisplayer = new MessageDisplayer(mEditorState, *mMessageManager);
+	addChild(mMessageDisplayer, 0, theme.getHeight() - 16, theme.getWidth(), 16);
+	
 	return true;
 }
 
@@ -812,4 +855,16 @@ void MainEditor::newSong()
 	mSong.clear();
 	mEditorState.reset();
 	refreshAll();
+}
+
+
+void MainEditor::showMessage(MessageClass messageClass, const char* message)
+{
+	mMessageManager->pushMessage(messageClass, message);
+}
+
+
+void MainEditor::onUpdate(int ms)
+{
+	mMessageManager->update(ms);
 }

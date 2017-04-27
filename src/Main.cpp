@@ -42,6 +42,7 @@ Context::Context()
 	}
 	
 	themeLoaded = true;
+	previousTick = SDL_GetTicks();
 }
 
 
@@ -108,10 +109,15 @@ void infinityAndBeyond(void *ctx)
 		{
 			/* We just reinit all controllers instead of initializing a specific one */
 			
-			printf("Device added\n");
+			if (event.type == SDL_CONTROLLERDEVICEADDED)
+				context.mainEditor.showMessageV(Editor::MessageInfo, "Plugged in %s", SDL_JoystickNameForIndex(event.cdevice.which));
+			else 
+				context.mainEditor.showMessageV(Editor::MessageInfo, "Unplugged %s", SDL_GameControllerName(SDL_GameControllerFromInstanceID(event.cdevice.which)));
 			
 			context.gamepad.deinitControllers();
 			context.gamepad.initControllers();
+			
+			
 		}
 		else
 		{
@@ -126,6 +132,14 @@ void infinityAndBeyond(void *ctx)
 		context.player.lock();
 		context.mainEditor.syncPlayerState();
 		context.mainEditor.syncSongParameters(context.song);
+		
+		Uint32 ticks = SDL_GetTicks() - context.previousTick;
+		
+		if (ticks > 0)
+		{
+			context.mainEditor.update(ticks);
+			context.previousTick += ticks;
+		}
 		
 		if (context.mainEditor.isDirty())
 		{
@@ -189,7 +203,8 @@ extern "C" int main(int argc, char **argv)
 	if (!context.mainEditor.loadState())
 		context.mainEditor.loadSong("assets/dub.song");
 	
-	context.mixer.runThread();
+	if (!context.mixer.runThread())
+		context.mainEditor.showMessage(Editor::MessageError, "Could not open audio device");
 	
 	while (!context.done)
 	{

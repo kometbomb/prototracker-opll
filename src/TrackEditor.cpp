@@ -190,7 +190,7 @@ bool TrackEditor::onEvent(SDL_Event& event)
 				{
 					if (event.key.keysym.mod & KMOD_LCTRL)
 					{
-						int hex = getHexFromKey(event.key.keysym.sym);
+						int hex = getHexFromKey(event.key.keysym);
 						if (hex >= 0 && hex <= 9)
 						{
 							mTrackEditorState.editSkip = hex;
@@ -198,10 +198,12 @@ bool TrackEditor::onEvent(SDL_Event& event)
 						else if (event.key.keysym.sym == SDLK_c)
 						{
 							copyBlock(mTrackEditorState.currentTrack);
+							showMessage(MessageInfo, "Copied block");
 						}
 						else if (event.key.keysym.sym == SDLK_v)
 						{
 							pasteBlock(mTrackEditorState.currentTrack);
+							showMessage(MessageInfo, "Block pasted");
 						}
 						else if (event.key.keysym.sym == SDLK_b)
 						{
@@ -214,10 +216,14 @@ bool TrackEditor::onEvent(SDL_Event& event)
 						else if (event.key.keysym.sym == SDLK_k)
 						{
 							killTrack(mTrackEditorState.currentTrack);
+							// TODO: These shoyld say "macro" in the macro editor!
+							showMessage(MessageInfo, "Killed pattern");
 						}
 						else if (event.key.keysym.sym == SDLK_u)
 						{
 							findUnusedTrack(mTrackEditorState.currentTrack);
+							// TODO: These shoyld say "macro" in the macro editor!
+							showMessage(MessageInfo, "Found an unused pattern");
 						}
 						else
 							return false;
@@ -232,7 +238,7 @@ bool TrackEditor::onEvent(SDL_Event& event)
 					{
 						if (event.key.repeat == 0)
 						{
-							int note = getNoteFromKey(event.key.keysym.scancode);
+							int note = getNoteFromKey(event.key.keysym);
 									
 							if (note != -1/* && mTrackEditorState.currentColumn == PatternRow::Column::Note && !(event.key.keysym.mod & KMOD_SHIFT)*/)
 							{
@@ -252,7 +258,7 @@ bool TrackEditor::onEvent(SDL_Event& event)
 						{
 							case PatternRow::Column::EffectType:
 							{
-								int c = getCharFromKey(event.key.keysym.sym);
+								int c = getCharFromKey(event.key.keysym);
 								if (c != -1)
 								{
 									patternRow.effect.effect = c;
@@ -264,7 +270,7 @@ bool TrackEditor::onEvent(SDL_Event& event)
 								
 							case PatternRow::Column::EffectParam1:
 							{
-								int hex = getHexFromKey(event.key.keysym.sym);
+								int hex = getHexFromKey(event.key.keysym);
 								if (hex != -1)
 								{
 									patternRow.effect.param1 = hex;
@@ -275,7 +281,7 @@ bool TrackEditor::onEvent(SDL_Event& event)
 							
 							case PatternRow::Column::EffectParam2:
 							{
-								int hex = getHexFromKey(event.key.keysym.sym);
+								int hex = getHexFromKey(event.key.keysym);
 								if (hex != -1)
 								{
 									patternRow.effect.param2 = hex;
@@ -286,7 +292,7 @@ bool TrackEditor::onEvent(SDL_Event& event)
 							
 							case PatternRow::Column::NoteParam1:
 							{
-								int hex = getHexFromKey(event.key.keysym.sym);
+								int hex = getHexFromKey(event.key.keysym);
 								if (hex != -1)
 								{
 									if (patternRow.note.effect != 'n')
@@ -302,7 +308,7 @@ bool TrackEditor::onEvent(SDL_Event& event)
 								
 							case PatternRow::Column::NoteParam2:
 							{
-								int hex = getHexFromKey(event.key.keysym.sym);
+								int hex = getHexFromKey(event.key.keysym);
 								if (hex != -1)
 								{
 									patternRow.note.param2 = hex;
@@ -314,7 +320,7 @@ bool TrackEditor::onEvent(SDL_Event& event)
 							case PatternRow::Column::Note:
 								if (event.key.keysym.mod & KMOD_SHIFT)
 								{
-									int c = getCharFromKey(event.key.keysym.sym);
+									int c = getCharFromKey(event.key.keysym);
 									if (c != -1)
 									{
 										patternRow.note.effect = c;
@@ -330,7 +336,7 @@ bool TrackEditor::onEvent(SDL_Event& event)
 								}
 								else
 								{
-									int note = getNoteFromKey(event.key.keysym.scancode);
+									int note = getNoteFromKey(event.key.keysym);
 									
 									if (note != -1)
 									{
@@ -615,19 +621,16 @@ void TrackEditor::emptyRow(bool allTracks, int flags)
 
 void TrackEditor::copyTrack(int track)
 {
-	printf("copy----\n");
-	printf("opic %c\n", mEditorState.copyBuffer.getRow(0).effect.effect);
-	printf("opic %c\n", getCurrentPattern(track).getRow(0).effect.effect);
+	showMessageV(MessageInfo, "Copied track %d on clipboard", track);
+	
 	mEditorState.copyBuffer.copy(getCurrentPattern(track), 0, 255);
-	printf("opic %c\n", mEditorState.copyBuffer.getRow(0).effect.effect);
-	printf("opic %c\n", getCurrentPattern(track).getRow(0).effect.effect);
 }
 
 
 void TrackEditor::pasteTrack(int track)
 {
-	printf("opic %c\n", mEditorState.copyBuffer.getRow(0).effect.effect);
-	printf("opic %c\n", getCurrentPattern(track).getRow(0).effect.effect);
+	showMessageV(MessageInfo, "Pasted clipboard on track %d", track);
+	
 	mEditorState.copyBuffer.paste(getCurrentPattern(track), 0);
 	mTrackEditorState.currentRow.notify();
 }
