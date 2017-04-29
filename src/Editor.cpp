@@ -255,6 +255,7 @@ bool Editor::pointInRect(const SDL_Point& point, const SDL_Rect& rect)
 
 bool Editor::intersectRect(const SDL_Rect& a, const SDL_Rect& b, SDL_Rect& result)
 {
+#ifdef SDL_IntersectRect
 	return SDL_IntersectRect(&point, &rect, &result);
 #else
 	// In case we are using SDL <2.0.4 (of whatever the version is
