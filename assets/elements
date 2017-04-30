@@ -11,10 +11,10 @@ Oscilloscope 	239 	2 	55 	61 	4
 Oscilloscope 	298	2 	55 	61 	5
 #
 # element     		x 		y  	w		h  	m1	m2
-PatternEditor		8 		78	338	192	4		4
-SequenceEditor	360	3		116	90	2 		0
+PatternEditor		6 		78	342	192	5		5
+SequenceEditor	360	3		116	90	5 		2
 MacroName			423	145 	52 	8
-MacroEditor		398	157 	77 	112	4 		4
+MacroEditor		399	157 	77 	112	4 		3
 #
 # element     			x 		y  	w		h
 SongName			4		67 	349	8
