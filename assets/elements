@@ -1,25 +1,25 @@
 Font "font.png" 8 8
-GUI "gui.png" 423 272
-
+GUI "gui.png" 480 272
 # this is a comment
-# element		x 	y	w	h 	track
-Oscilloscope	2 	2 	47 	61 	0
-Oscilloscope 	52 	2 	47 	61 	1
-Oscilloscope 	102	2 	47 	61 	2
-Oscilloscope 	152 2 	47 	61 	3
-Oscilloscope 	202 2 	47 	61 	4
-Oscilloscope 	252 2 	47 	61 	5
-
-# element     	x 	y  	w	h  	m1	m2
-PatternEditor	3 	78	338	194	4	4
-MacroEditor		344	78 	76 	194	4 	4
-SequenceEditor	305	3 	119	40	2 	0
-
-# element     	x 	y  	w	h
-SongName		4	67 	231	8
-MacroName		361	67 	56 	8
-MacroNumber		344	67	16	8
-SequencePosition	338	54	16	8
-SequenceLength	359	54 16	8
-PatternLength	380	54	16	8
-OctaveNumber	401	54	16	8
+#
+# element			x 		y	w		h 		track
+Oscilloscope		3 		2 	55 	61 	0
+Oscilloscope 	62 	2 	55 	61 	1
+Oscilloscope 	121	2 	55 	61 	2
+Oscilloscope 	180 	2 	55 	61 	3
+Oscilloscope 	239 	2 	55 	61 	4
+Oscilloscope 	298	2 	55 	61 	5
+#
+# element     		x 		y  	w		h  	m1	m2
+PatternEditor		8 		78	338	192	4		4
+SequenceEditor	360	3		116	90	2 		0
+MacroName			423	145 	52 	8
+MacroEditor		398	157 	77 	112	4 		4
+#
+# element     			x 		y  	w		h
+SongName			4		67 	349	8
+MacroNumber		405	145	16	8
+SequencePosition	368	164	16	8
+SequenceLength	368	195 	16	8
+PatternLength		368	226	16	8
+OctaveNumber		368	257	16	8
