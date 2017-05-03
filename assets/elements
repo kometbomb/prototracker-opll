@@ -12,7 +12,7 @@ Oscilloscope 	298	2 	55 	61 	5
 #
 # element     		x 		y  	w		h  	m1	m2
 PatternEditor		6 		78	342	192	5		5
-SequenceEditor	357	3		118	90	2		1
+SequenceEditor	357	12	118	80	2		1
 MacroName			423	145 	52 	8
 MacroEditor		399	157 	77 	112	4 		3
 #
