@@ -5,6 +5,7 @@
 #include "SDL.h"
 #include <algorithm>
 
+const int ISynth::oscillatorProbeLength;
 
 ISynth::ISynth()
 	: mProbePosition(0)
@@ -89,4 +90,9 @@ void ISynth::setSampleRate(int rate)
 {
 	for (int i = 0 ; i < SequenceRow::maxTracks ; ++i)
 		mOscillator[i]->setSampleRate(rate);
+}
+
+
+void ISynth::reset()
+{
 }
