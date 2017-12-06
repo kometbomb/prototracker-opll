@@ -1,6 +1,12 @@
 #include "IOscillator.h"
 #include "ITrackState.h"
 
+IOscillator::IOscillator()
+	: mSampleRate(0)
+{
+}
+
+
 IOscillator::~IOscillator()
 {
 }
