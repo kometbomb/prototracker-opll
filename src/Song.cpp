@@ -7,6 +7,7 @@
 #include "PatternRow.h"
 #include "FileSection.h"
 #include "SectionListener.h"
+#include "Debug.h"
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -17,7 +18,13 @@ Song::Song()
 	: patternLength(64), sequenceLength(1), mNumListeners(0)
 {
 	sequence = new Sequence();
-	patterns = new Pattern[maxPatterns];
+	patterns = new Pattern*[SequenceRow::maxTracks];
+
+	for (int track = 0 ; track < SequenceRow::maxTracks ; ++track)
+	{
+		patterns[track] = new Pattern[maxPatterns];
+	}
+
 	macros = new Macro[maxMacros];
 	strcpy(name, "new song");
 }
@@ -25,6 +32,9 @@ Song::Song()
 
 Song::~Song()
 {
+	for (int track = 0 ; track < SequenceRow::maxTracks ; ++track)
+		delete[] patterns[track];
+
 	delete[] patterns;
 	delete[] macros;
 	delete sequence;
@@ -37,16 +47,16 @@ Sequence& Song::getSequence()
 }
 
 
-int Song::getLastPatternUsed() const
+int Song::getLastPatternUsed(int track) const
 {
 	int last = -1;
-	
+
 	for (int i = 0 ; i < maxPatterns ; ++i)
 	{
-		if (!patterns[i].isEmpty())
+		if (!patterns[track][i].isEmpty())
 			last = std::max(last, i);
 	}
-	
+
 	return last;
 }
 
@@ -60,7 +70,7 @@ int Song::getLastMacroUsed() const
 		if (strlen(macros[i].getName()) > 0 || !macros[i].isEmpty())
 			last = std::max(last, i);
 	}
-	
+
 	return last;
 }
 
@@ -77,9 +87,9 @@ int Song::getSequenceLength() const
 }
 
 
-Pattern& Song::getPattern(int pattern)
+Pattern& Song::getPattern(int track, int pattern)
 {
-	return patterns[pattern];
+	return patterns[track][pattern];
 }
 
 
@@ -101,58 +111,62 @@ void Song::setSequenceLength(int length)
 }
 
 
-FileSection* Song::pack() 
+FileSection* Song::pack()
 {
 	FileSection * song = FileSection::createSection("SONG");
-	
+
 	/*
 	 * Basic song info
 	 */
-	
+
 	// File format version
 	song->writeByte(songVersion);
 	song->writeByte(SequenceRow::maxTracks);
+	song->writeByte(PatternRow::effectParams);
 	song->writeString(name);
 	song->writeByte(patternLength - 1);
 	song->writeByte(sequenceLength - 1);
-	
+
 	/*
 	 * Sequence data
 	 */
-	
+
 	FileSection * sequenceData = FileSection::createSection("SEQU");
 	int sequenceCount = sequence->getLastSequenceRowUsed() + 1;
 	sequenceData->writeByte(sequenceCount);
 	for (int track = 0 ; track < SequenceRow::maxTracks ; ++track)
 	{
 		for (int i = 0 ; i < sequenceCount ; ++i)
-		{			
+		{
 			SequenceRow& sequenceRow = sequence->getRow(i);
 			sequenceData->writeByte(sequenceRow.pattern[track]);
 		}
 	}
 	song->writeSection(*sequenceData);
 	delete sequenceData;
-	
+
 	/*
 	 * Patterns
 	 */
-	
+
 	FileSection * patternData = FileSection::createSection("PATT");
-	int patternCount = getLastPatternUsed() + 1;
-	patternData->writeByte(patternCount);
-	for (int i = 0 ; i < patternCount ; ++i)
+	for (int track = 0 ; track < SequenceRow::maxTracks ; ++track)
 	{
-		Pattern& pattern = getPattern(i);
-		patternData->writePattern(pattern);
+		int patternCount = getLastPatternUsed(track) + 1;
+		patternData->writeByte(patternCount);
+		for (int i = 0 ; i < patternCount ; ++i)
+		{
+			Pattern& pattern = getPattern(track, i);
+			patternData->writePattern(pattern);
+		}
 	}
 	song->writeSection(*patternData);
 	delete patternData;
-	
+
 	/*
 	 * Macros
 	 */
-	
+
 	FileSection * macroData = FileSection::createSection("MACR");
 	int macroCount = getLastMacroUsed() + 1;
 	//printf("Saving %d macros\n", macroCount);
@@ -165,9 +179,9 @@ FileSection* Song::pack()
 	}
 	song->writeSection(*macroData);
 	delete macroData;
-	
+
 	// Call SectionListeners for save
-	
+
 	for (int i = 0 ; i < mNumListeners ; ++i)
 	{
 		if (mListeners[i].flags & SectionListener::Save)
@@ -178,7 +192,7 @@ FileSection* Song::pack()
 			delete listenerSection;
 		}
 	}
-	
+
 	return song;
 }
 
@@ -186,19 +200,22 @@ FileSection* Song::pack()
 void Song::clear()
 {
 	sequence->clear();
-	
+
 	strcpy(name, "");
-	
-	for (int i = 0 ; i < maxPatterns ; ++i)
+
+	for (int track = 0 ; track < SequenceRow::maxTracks ; ++track)
 	{
-		patterns[i].clear();
+		for (int i = 0 ; i < maxPatterns ; ++i)
+		{
+			patterns[track][i].clear();
+		}
 	}
-	
+
 	for (int i = 0 ; i < maxMacros ; ++i)
 	{
 		macros[i].clear();
 	}
-	
+
 	sequenceLength = 1;
 	patternLength = 64;
 }
@@ -208,74 +225,101 @@ Song::UnpackError Song::unpack(const FileSection& section)
 {
 	if (strcmp(section.getName(), "SONG") != 0)
 		return NotASong;
-	
+
 	clear();
-	
+
+	// Trigger synth reset
+	for (int i = 0 ; i < mNumListeners ; ++i)
+	{
+		if (mListeners[i].flags & SectionListener::Load)
+		{
+			mListeners[i].listener->onSongClear();
+		}
+	}
+
 	int offset = 0;
 	int version = section.readByte(offset);
-	
+
 	if (version > songVersion)
 	{
 		// TODO: display a proper error if the version is newer than we can handle
 		return ErrorVersion;
 	}
-	
+
 	// Default trackCount for version == 0
 	int trackCount = 4;
-	
+
+	// Default pattern set count (version >= 17 uses a separate set of patterns for each track)
+	int patternSets = 1;
+
+	if (version >= 17)
+	{
+		patternSets = trackCount;
+	}
+	// Default effect param count for version <= 16
+	int effectParamCount = 1;
+
 	if (version == FileSection::invalidRead)
 		return ErrorRead;
-	
+
 	if (version >= 1)
 	{
 		trackCount = section.readByte(offset);
-		
+
 		if (trackCount == FileSection::invalidRead)
 			return ErrorRead;
 	}
-	
+
+	if (version >= 17)
+	{
+		effectParamCount = section.readByte(offset);
+
+		if (effectParamCount == FileSection::invalidRead)
+			return ErrorRead;
+	}
+
 	const char *songName = section.readString(offset);
-	
+
 	if (songName == NULL)
 		return ErrorRead;
-	
+
 	strncpy(name, songName, songNameLength + 1);
-	
+
 	int temp = section.readByte(offset);
-	
+
 	if (temp == FileSection::invalidRead)
 		return ErrorRead;
-	
+
 	patternLength = temp + 1;
-	
+
 	temp = section.readByte(offset);
-	
+
 	if (temp == FileSection::invalidRead)
 		return ErrorRead;
-	
+
 	sequenceLength = temp + 1;
-	
+
 	UnpackError returnValue = Success;
-	
+
 	do
 	{
 		//printf("offset = %d\n", offset);
 		FileSection *subSection = section.readSection(offset);
 		int subOffset = 0;
-		
+
 		if (subSection == NULL)
 			break;
-		
+
 		const char *sectionName = subSection->getName();
-		
+
 		if (sectionName != NULL)
 		{
 			//printf("Read section %s (%d bytes)\n", sectionName, subSection->getSize());
-			
+
 			if (strcmp(sectionName, "SEQU") == 0)
 			{
 				int temp = subSection->readByte(subOffset);
-				
+
 				if (temp == FileSection::invalidRead)
 				{
 					returnValue = ErrorRead;
@@ -283,9 +327,9 @@ Song::UnpackError Song::unpack(const FileSection& section)
 				else
 				{
 					int count = temp;
-					
+
 					//printf("Reading %d sequences\n", count);
-					
+
 					if (count > maxSequenceRows)
 					{
 						returnValue = ErrorRead;
@@ -297,13 +341,13 @@ Song::UnpackError Song::unpack(const FileSection& section)
 							for (int i = 0 ; i < count ; ++i)
 							{
 								int temp = subSection->readByte(subOffset);
-								
+
 								if (temp == FileSection::invalidRead)
 								{
 									returnValue = ErrorRead;
 									break;
 								}
-								
+
 								// Skip tracks that can't fit in our sequence
 								if (track < SequenceRow::maxTracks)
 									sequence->getRow(i).pattern[track] = temp;
@@ -314,24 +358,36 @@ Song::UnpackError Song::unpack(const FileSection& section)
 			}
 			else if (strcmp(sectionName, "PATT") == 0)
 			{
-				int temp = subSection->readByte(subOffset);
-				
-				if (temp == FileSection::invalidRead)
+				int tempSubOffset = subOffset;
+
+				for (int track = 0 ; track < trackCount ; ++track)
 				{
-					returnValue = ErrorRead;
-				}
-				else
-				{
-					int count = temp;
-					
-					//printf("Reading %d patterns\n", count);
-					
-					for (int i = 0 ; i < count ; ++i)
+					// If only one pattern set in the file, keep reading the
+					// same patterns for each track
+					if (patternSets == 1)
 					{
-						if (!subSection->readPattern(patterns[i], subOffset))
+						subOffset = tempSubOffset;
+					}
+
+					int temp = subSection->readByte(subOffset);
+
+					if (temp == FileSection::invalidRead)
+					{
+						returnValue = ErrorRead;
+						break;
+					}
+					else
+					{
+						int count = temp;
+
+						for (int i = 0 ; i < count ; ++i)
+
 						{
-							returnValue = ErrorRead;
-							break;
+							if (!subSection->readPattern(patterns[track][i], effectParamCount, subOffset))
+							{
+								returnValue = ErrorRead;
+								break;
+							}
 						}
 					}
 				}
@@ -339,7 +395,7 @@ Song::UnpackError Song::unpack(const FileSection& section)
 			else if (strcmp(sectionName, "MACR") == 0)
 			{
 				int temp = subSection->readByte(subOffset);
-				
+
 				if (temp == FileSection::invalidRead)
 				{
 					returnValue = ErrorRead;
@@ -347,22 +403,22 @@ Song::UnpackError Song::unpack(const FileSection& section)
 				else
 				{
 					int count = temp;
-					
-					//printf("Reading %d macros\n", count);
-					
+
+					// printf("Reading %d macros\n", count);
+
 					for (int i = 0 ; i < count ; ++i)
 					{
 						const char *macroName = subSection->readString(subOffset);
-						
+
 						if (macroName == NULL)
 						{
 							returnValue = ErrorRead;
 							break;
 						}
-						
+
 						strncpy(macros[i].getName(), macroName, Macro::macroNameLength + 1);
-						
-						if (!subSection->readPattern(macros[i], subOffset))
+
+						if (!subSection->readPattern(macros[i], effectParamCount, subOffset))
 						{
 							returnValue = ErrorRead;
 							break;
@@ -372,10 +428,14 @@ Song::UnpackError Song::unpack(const FileSection& section)
 			}
 			else
 			{
+				bool processed = false;
+
 				for (int i = 0 ; i < mNumListeners ; ++i)
 				{
 					if ((mListeners[i].flags & SectionListener::Load) && strcmp(mListeners[i].sectionId, sectionName) == 0)
 					{
+						processed = true;
+
 						if (!mListeners[i].listener->onFileSectionLoad(*subSection, subOffset))
 						{
 							returnValue = ErrorRead;
@@ -383,19 +443,24 @@ Song::UnpackError Song::unpack(const FileSection& section)
 						}
 					}
 				}
+
+				if (!processed)
+				{
+					debug("Skipping unknown section '%s'", sectionName);
+				}
 			}
 		}
 		else
 		{
 			returnValue = ErrorRead;
 		}
-		
+
 		//offset += subOffset;
-		
+
 		delete subSection;
 	}
 	while (returnValue == Success);
-	
+
 	return returnValue;
 }
 
@@ -416,13 +481,13 @@ bool Song::addSectionListener(const char *sectionId, SectionListener *sectionLis
 {
 	if (mNumListeners >= maxListeners)
 		return false;
-	
+
 	SectionListenerInfo& info = mListeners[mNumListeners];
 	info.flags = flags;
 	info.sectionId = sectionId;
 	info.listener = sectionListener;
-	
+
 	mNumListeners++;
-		
+
 	return true;
 }
