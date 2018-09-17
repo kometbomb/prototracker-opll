@@ -1,7 +1,7 @@
 OUTPUT=prototracker-opll.exe
 
 $(OUTPUT): $(CPP_SRC) $(CPP_H) $(C_OBJ)
-	g++ -DSCALE=2 -O3 -Wformat -std=c++11 -o $@ $(CPP_SRC) $(C_OBJ) -lmingw32 -lSDL2_image -lSDL2main -lSDL2 -Ic:/mingw/include/SDL2 -Ic:/tdm-gcc-32/include/SDL2 -s
+	g++ -DSCALE=2 -O3 -Wformat -std=c++11 -o $@ $(CPP_SRC) $(C_OBJ) -lmingw32 -lSDL2_image -lSDL2main -lSDL2 -Ic:/mingw/include/SDL2 -Ic:/tdm-gcc-32/include/SDL2 -s -DENABLE_AUDIO_QUEUE=1
 
 $(C_OBJ): $(C_SRC) $(C_H)
 	gcc -c -o $@ $(C_SRC) -O3 -Wall -std=gnu99

@@ -13,3 +13,8 @@ $(OUTPUT): $(CPP_SRC) $(CPP_H) $(C_OBJ)
 
 $(C_OBJ): $(C_SRC) $(C_H)
 	emcc -c -o $@ $(wildcard $(C_SRC)) -O3 -Wall -std=gnu99
+		-s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall"]' -DSCALE=2 -DSAMPLERATE=22050 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2 \
+		-s USE_SDL_IMAGE=2 -s BINARYEN_TRAP_MODE=clamp -s WASM=1
+
+clean:
+	rm $(OUTPUT).html $(OUTPUT).js $(OUTPUT).data $(OUTPUT).wasm
