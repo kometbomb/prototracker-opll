@@ -4,17 +4,17 @@
 # and various C-callbacks (available to the host webpage) are listed on the
 # command line.
 
-OUTPUT=prototracker-opll.html
+OUTPUT=prototracker-opll
 
-$(OUTPUT): $(CPP_SRC) $(CPP_H) $(C_OBJ)
-	emcc -Wformat -std=c++11 --preload-file assets -O3 -s NO_EXIT_RUNTIME=1 -s EXPORTED_FUNCTIONS='["_main","_emFilesSyncedStartup","_emFilesSyncedShutdown","_emOnFileImported","_emExportFile","_emNewSong","_emPlaySong","_emRequestSong"]' -s SDL2_IMAGE_FORMATS='["png"]' \
-		-s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall"]' -DSCALE=2 -DOVERSAMPLE=3 -DSAMPLERATE=22050 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2 \
-		-s USE_SDL_IMAGE=2 -s BINARYEN_TRAP_MODE=clamp $(wildcard $(CPP_SRC)) $(C_OBJ) -o $@
+$(OUTPUT).html: $(C_OBJ) $(CPP_SRC) src/*.h
+	emcc -std=c++11 --preload-file assets -O3 -s NO_EXIT_RUNTIME=0 \
+		-s EXPORTED_FUNCTIONS='["_main"]' -s SDL2_IMAGE_FORMATS='["png"]' \
+		-s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall"]' -DSCALE=2 -DSAMPLERATE=22050 \
+		-s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2 -s USE_SDL_IMAGE=2 -s BINARYEN_TRAP_MODE=clamp \
+		-s WASM=1 -s MODULARIZE=1 $(wildcard $(CPP_SRC)) -o $@ $(C_OBJ)
 
 $(C_OBJ): $(C_SRC) $(C_H)
-	emcc -c -o $@ $(wildcard $(C_SRC)) -O3 -Wall -std=gnu99 \
-		-s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall"]' -DSCALE=2 -DSAMPLERATE=22050 -s ALLOW_MEMORY_GROWTH=1 -s USE_SDL=2 \
-		-s USE_SDL_IMAGE=2 -s BINARYEN_TRAP_MODE=clamp -s WASM=1
+	emcc -c -o $@ $(wildcard $(C_SRC)) -O3 -Wall -std=gnu99 -s BINARYEN_TRAP_MODE=clamp -s WASM=1
 
 clean:
-	rm $(OUTPUT).html $(OUTPUT).js $(OUTPUT).data $(OUTPUT).wasm
+	rm $(OUTPUT).html $(OUTPUT).js $(OUTPUT).data $(OUTPUT).wasm emu2413.o
