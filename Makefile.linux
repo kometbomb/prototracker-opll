@@ -1,7 +1,12 @@
 OUTPUT=prototracker-opll
+CC=g++
+GCC=gcc
 
 $(OUTPUT): $(CPP_SRC) $(CPP_H) $(C_OBJ)
-	g++ -O3 -Wformat -std=c++11 -o $@ $(CPP_SRC) $(C_OBJ) -lSDL2_image -lSDL2main `sdl2-config --cflags --libs` -s
-	
+	$(CC) -O3 -Wformat -std=c++11 -o $@ $(CPP_SRC) $(C_OBJ) -lSDL2_image -lSDL2main `sdl2-config --cflags --libs` -s -DSCALE=2
+
 $(C_OBJ): $(C_SRC) $(C_H)
-	gcc -c -o $@ $(C_SRC) -O3 -Wall -std=gnu99
+	$(GCC) -c -o $@ $(C_SRC) -O3 -Wall -std=gnu99
+
+clean:
+	rm $(OUTPUT)
